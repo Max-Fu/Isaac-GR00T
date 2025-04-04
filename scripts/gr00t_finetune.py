@@ -42,7 +42,7 @@ class Config:
     output_dir: str = "/tmp/gr00t"
     """Directory to save model checkpoints."""
 
-    data_config: str = "gr1_arms_only"
+    data_config: str = "yumi"
     """Data configuration name from DATA_CONFIG_MAP."""
 
     # Training parameters

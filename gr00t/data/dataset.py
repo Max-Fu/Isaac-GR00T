@@ -297,7 +297,7 @@ class LeRobotSingleDataset(Dataset):
             try:
                 channels = le_video_meta["shape"][le_video_meta["names"].index("channel")]
                 fps = le_video_meta["video_info"]["video.fps"]
-            except ValueError:
+            except KeyError:
                 channels = le_video_meta["shape"][le_video_meta["names"].index("channels")]
                 fps = le_video_meta["info"]["video.fps"]
             simplified_modality_meta["video"][new_key] = {
