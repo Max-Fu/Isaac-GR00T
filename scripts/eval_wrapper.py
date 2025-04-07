@@ -8,7 +8,7 @@ from gr00t.model.policy import Gr00tPolicy
 from gr00t.data.embodiment_tags import EmbodimentTag
 import numpy as np
 
-class DiffusionWrapper():
+class GROOTWrapper():
     def __init__(
         self, 
         model_ckpt_folder : str, 
@@ -43,7 +43,7 @@ class DiffusionWrapper():
             model_path=model_path,
             modality_config=modality_config,
             modality_transform=transforms,
-            embodiment_tag=EmbodimentTag.GR1,
+            embodiment_tag=EmbodimentTag.NEW_EMBODIMENT,
             device=self.device
         )
         self.text_prompt = text_prompt
@@ -62,6 +62,9 @@ class DiffusionWrapper():
         Model will output:
             "action.yumi_grippers": (1, 2) np.float64
             "action.yumi_delta_joints": (1, 14) np.float64
+
+        We will return:
+            target_q: (16, 16) np.float64 (num_pred_actions, num_joints + num_grippers)
         """
         # update nbatch observation (B, T, num_cameras, H, W, C) -> (B, num_cameras, H, W, C)
         nbatch["observation"] = nbatch["observation"][:, -1]
@@ -70,7 +73,7 @@ class DiffusionWrapper():
             # permute if pytorch
             nbatch["observation"] = np.transpose(nbatch["observation"], (0, 1, 3, 4, 2))
 
-        # we use the last two action dimensions for the grippers
+        # we use the last two action dimensions for the grippers nbatch["proprio"] has shape (B, T, 16)
         joint_positions = nbatch["proprio"][:, -1, :-2]
         gripper_positions = nbatch["proprio"][:, -1, -2:]
         batch = {
@@ -83,7 +86,10 @@ class DiffusionWrapper():
         action = self.policy.get_action(batch)
 
         # convert to absolute action 
-        target_joint_positions = action["action.yumi_delta_joints"] + joint_positions
+        target_joint_positions = action["action.yumi_delta_joints"].copy()
+        target_joint_positions[0] += joint_positions.squeeze()
+        for i in range(1, target_joint_positions.shape[0]):
+            target_joint_positions[i] += target_joint_positions[i-1]
         
         # append gripper command to the joint positions
         target_q = np.concatenate([target_joint_positions, action["action.yumi_grippers"]], axis=-1)
