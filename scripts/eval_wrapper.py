@@ -63,7 +63,7 @@ class DiffusionWrapper():
             "action.yumi_grippers": (1, 2) np.float64
             "action.yumi_delta_joints": (1, 14) np.float64
         """
-        # update nbatch observation 
+        # update nbatch observation (B, T, num_cameras, H, W, C) -> (B, num_cameras, H, W, C)
         nbatch["observation"] = nbatch["observation"][:, -1]
         if nbatch["observation"].shape[-1] != 3:
             # make B, num_cameras, H, W, C  from B, num_cameras, C, H, W
@@ -74,8 +74,8 @@ class DiffusionWrapper():
         joint_positions = nbatch["proprio"][:, -1, :-2]
         gripper_positions = nbatch["proprio"][:, -1, -2:]
         batch = {
-            "video.exterior_image_1_left": nbatch["observation"][:, 0, 0],
-            "video.exterior_image_2_left": nbatch["observation"][:, 0, 1],
+            "video.exterior_image_1_left": nbatch["observation"][:, 0],
+            "video.exterior_image_2_left": nbatch["observation"][:, 1],
             "state.yumi_joints": joint_positions,
             "state.yumi_grippers": gripper_positions,
             "annotation.human.action.task_description": [self.text_prompt],
